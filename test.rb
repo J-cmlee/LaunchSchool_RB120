@@ -1,46 +1,26 @@
-# For practice and testing
+class Animal
+  attr_accessor :name
 
-class Vehicle
-
-  @@number_of_vehicles = 0
-
-  def self.number_of_vehicles
-    puts "There are #{@@number_of_vehicles} vehicles"
-  end
-
-  def self.gas(gallons, miles)
-    puts "#{miles / gallons} miles per gallon of gas"
+  def initialize(name)
+    @name = name
   end
 end
 
-class MyCar < Vehicle
-  attr_accessor :color, :model
-  attr_reader :year
-
-  def initialize(year, color, model)
-    @year = year
+class GoodDog < Animal
+  def initialize(color)
+    super
     @color = color
-    @model = model
-    @speed = 0
-  end
-
-  def speed_up(accel)
-    @speed += accel
-  end
-
-  def break(decel)
-    @speed -= decel
-  end
-
-  def shutdown
-    @speed = 0
-  end
-
-  def spray_paint(color)
-    self.color = color
-    puts "#{@color}"
   end
 end
 
-car1 = MyCar.new(2000, "red", "model Y")
-car1.spray_paint("blue")
+class BadDog < Animal
+  def initialize(age, name)
+    super(name)
+    @age = age
+  end
+end
+
+p BadDog.new(2, "bear") 
+
+bruno = GoodDog.new("brown")
+p bruno
