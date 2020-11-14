@@ -360,3 +360,6 @@ Style/InverseMethods:
 Style/MixinGrouping:
   Description: 'mixins as separate statements'
   Enabled: false
+
+AllCops:
+    NewCops: enable
