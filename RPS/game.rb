@@ -4,13 +4,14 @@
 class Move
   attr_reader :name
 
+  def initialize; end
+
   def >(other_move)
     win_against?(other_move)
   end
 
   def <(other_move)
-    (self.class != other_move.class) &&
-      (other_move.win_against?(self))
+    (other_move.win_against?(self))
   end
 
   def to_s
@@ -20,6 +21,7 @@ end
 
 class Rock < Move
   def initialize
+    super
     @name = 'rock'
   end
 
@@ -31,6 +33,7 @@ end
 
 class Paper < Move
   def initialize
+    super
     @name = 'paper'
   end
 
@@ -42,6 +45,7 @@ end
 
 class Scissors < Move
   def initialize
+    super
     @name = 'scissors'
   end
 
@@ -53,6 +57,7 @@ end
 
 class Lizard < Move
   def initialize
+    super
     @name = 'lizard'
   end
 
@@ -64,6 +69,7 @@ end
 
 class Spock < Move
   def initialize
+    super
     @name = 'spock'
   end
 
@@ -128,6 +134,12 @@ class Computer < Player
     set_personality
   end
 
+  def choose
+    self.move = personality.sample.new
+  end
+
+  private
+
   # Computer Personalities
   # depending on the personality, the number of each move class is
   # adjusted in count within the @personality array
@@ -140,10 +152,6 @@ class Computer < Player
     when 'C3PO'
       self.personality = [Rock]
     end
-  end
-
-  def choose
-    self.move = personality.sample.new
   end
 
   def set_r2d2_personality
@@ -159,6 +167,7 @@ class Computer < Player
   end
 end
 
+# History class to store each round
 class History
   SPACING = 18
   def initialize
@@ -186,7 +195,7 @@ end
 
 # Game Orchestration Engine
 class RPSGame
-  WIN_SCORE = 3
+  WIN_SCORE = 10
   attr_accessor :human, :computer
 
   def initialize
@@ -198,6 +207,8 @@ class RPSGame
     puts '================================'
     puts 'Welcome to Rock, Paper, Scissors'
     puts '================================'
+    puts "First to #{WIN_SCORE} wins!"
+    puts ""
   end
 
   def display_goodbye_message
@@ -239,8 +250,13 @@ class RPSGame
     puts "#{computer.name}: #{computer.score}"
   end
 
+  def reset_score
+    human.score = 0
+    computer.score = 0
+  end
+
   def clear_screen
-    # system("clear") # Linux/Mac
+    system("clear") # Linux/Mac
     system("cls") # Windows
   end
 
@@ -253,7 +269,6 @@ class RPSGame
 
       puts 'Sorry, must be y or n'
     end
-    return false if answer == 'n'
     return true if answer == 'y'
   end
 
@@ -274,6 +289,7 @@ class RPSGame
         break if max_score?
       end
       break unless play_again?
+      reset_score
     end
     clear_screen
     display_goodbye_message
