@@ -38,3 +38,6 @@ end
 rock = Rock.new
 scissors = Scissors.new
 p rock > scissors
+array1 = [[1,2,3],[2,3,4]]
+
+array1.each {|row| puts row.join(" ")}

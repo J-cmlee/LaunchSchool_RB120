@@ -121,21 +121,72 @@ end
 
 # Computer controlled player class
 class Computer < Player
+  attr_accessor :personality
+
   def set_name
-    self.name = %w(R2D2 Hal Chappie C3PO).sample
+    self.name = %w(R2D2 Hal C3PO).sample
+    set_personality
   end
 
   # Computer Personalities
+  # depending on the personality, the number of each move class is
+  # adjusted in count within the @personality array
+  def set_personality
+    case name
+    when 'R2D2'
+      set_r2d2_personality
+    when 'Hal'
+      set_hal_personality
+    when 'C3PO'
+      self.personality = [Rock]
+    end
+  end
 
   def choose
-    self.move = MOVE_HASH.values.sample.new
+    self.move = personality.sample.new
+  end
+
+  def set_r2d2_personality
+    self.personality = MOVE_HASH.values
+  end
+
+  def set_hal_personality
+    p_array = []
+    10.times { p_array << Rock }
+    21.times { p_array << Scissors }
+    42.times { p_array << Paper }
+    self.personality = p_array
   end
 end
 
+class History
+  SPACING = 18
+  def initialize
+    @record = []
+    @round = 1
+  end
+
+  def add_record(player1, player2)
+    @record << [@round, player1.move.name, player2.move.name,
+                player1.score, player2.score]
+    @record.last.map! { |unit| unit.to_s.ljust(SPACING) }
+    @round += 1
+  end
+
+  def print_record(player1, player2)
+    puts "MATCH HISTORY"
+    header = ["Round", player1.name + " Move", player2.name + " Move",
+              player1.name + " Score", player2.name + " Score"]
+    header = header.map! { |unit| unit.ljust(SPACING) }.join
+    puts header
+    puts "=" * header.length
+    @record.each { |round| puts round.join }
+  end
+end
 
 # Game Orchestration Engine
 class RPSGame
-  WIN_SCORE = 10
+  WIN_SCORE = 3
   attr_accessor :human, :computer
 
   def initialize
@@ -209,20 +260,24 @@ class RPSGame
   def play
     clear_screen
     display_welcome_message
-    loop do
-      loop do
+    history = History.new
+    loop do # Loop to play again until user quits
+      loop do # Loop until one player reaches maximum score
         human.choose
         computer.choose
         clear_screen
         display_moves
         winner = calculate_winner
         display_winner_message(winner)
+        history.add_record(human, computer)
         display_score
         break if max_score?
       end
       break unless play_again?
     end
+    clear_screen
     display_goodbye_message
+    history.print_record(human, computer)
   end
 end
 
