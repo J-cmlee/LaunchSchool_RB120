@@ -1,40 +1,88 @@
-# Used for storing player moves
+# Move class used to compare different moves
+# Indiviual moves have been made into individual classes, which allows
+# for more customization of the rules, but requires a lot more code
 class Move
-  VALUES = %w(rock paper scissors).freeze
-  def initialize(value)
-    @value = value
-  end
-
-  def scissors?
-    @value == 'scissors'
-  end
-
-  def rock?
-    @value == 'rock'
-  end
-
-  def paper?
-    @value == 'paper'
-  end
+  attr_reader :name
 
   def >(other_move)
-    (rock? && other_move.scissors?) ||
-      (paper? && other_move.rock?) ||
-      (scissors? && other_move.paper?)
+    win_against?(other_move)
   end
 
   def <(other_move)
-    (rock? && other_move.paper?) ||
-      (paper? && other_move.scissors?) ||
-      (scissors? && other_move.rock?)
+    (self.class != other_move.class) &&
+      (other_move.win_against?(self))
   end
 
   def to_s
-    @value
+    name
   end
 end
 
-# Player class for storing moves
+class Rock < Move
+  def initialize
+    @name = 'rock'
+  end
+
+  def win_against?(other_move)
+    (other_move.name == 'scissors') ||
+      (other_move.name == 'lizard')
+  end
+end
+
+class Paper < Move
+  def initialize
+    @name = 'paper'
+  end
+
+  def win_against?(other_move)
+    (other_move.name == 'rock') ||
+      (other_move.name == 'spock')
+  end
+end
+
+class Scissors < Move
+  def initialize
+    @name = 'scissors'
+  end
+
+  def win_against?(other_move)
+    (other_move.name == 'paper') ||
+      (other_move.name == 'lizard')
+  end
+end
+
+class Lizard < Move
+  def initialize
+    @name = 'lizard'
+  end
+
+  def win_against?(other_move)
+    (other_move.name == 'paper') ||
+      (other_move.name == 'spock')
+  end
+end
+
+class Spock < Move
+  def initialize
+    @name = 'spock'
+  end
+
+  def win_against?(other_move)
+    (other_move.name == 'scissors') ||
+      (other_move.name == 'rock')
+  end
+end
+
+# Constant hash to link string to Object names
+MOVE_HASH = {
+  'rock' => Rock,
+  'paper' => Paper,
+  'scissors' => Scissors,
+  'lizard' => Lizard,
+  'spock' => Spock
+}
+
+# Player class for storing moves and scores for user
 class Player
   attr_accessor :move, :name, :score
 
@@ -61,26 +109,29 @@ class Human < Player
   def choose
     choice = nil
     loop do
-      puts 'Please choose rock, paper, or scissors:'
-      choice = gets.chomp
-      break if Move::VALUES.include?(choice)
+      puts "Please choose #{MOVE_HASH.keys}:"
+      choice = gets.chomp.downcase
+      break if MOVE_HASH.keys.include?(choice)
 
       puts 'Sorry, invalid choice'
     end
-    self.move = Move.new(choice)
+    self.move = MOVE_HASH[choice].new
   end
 end
 
 # Computer controlled player class
 class Computer < Player
   def set_name
-    self.name = %w(R2D2 Hal Chappie).sample
+    self.name = %w(R2D2 Hal Chappie C3PO).sample
   end
 
+  # Computer Personalities
+
   def choose
-    self.move = Move.new(Move::VALUES.sample)
+    self.move = MOVE_HASH.values.sample.new
   end
 end
+
 
 # Game Orchestration Engine
 class RPSGame
@@ -107,10 +158,20 @@ class RPSGame
     puts "#{computer.name} chose #{computer.move}"
   end
 
-  def display_winner_message
+  def calculate_winner
     if human.move > computer.move
-      puts "#{human.name} won"
+      human.score += 1
+      human
     elsif human.move < computer.move
+      computer.score += 1
+      computer
+    end
+  end
+
+  def display_winner_message(winner)
+    if winner == human
+      puts "#{human.name} won"
+    elsif winner == computer
       puts "#{computer.name} won"
     else
       puts "It's a tie"
@@ -121,8 +182,15 @@ class RPSGame
     (human.score == WIN_SCORE) || (computer.score == WIN_SCORE)
   end
 
+  def display_score
+    puts "Score:"
+    puts "#{human.name}: #{human.score}"
+    puts "#{computer.name}: #{computer.score}"
+  end
+
   def clear_screen
-    system("clear")
+    # system("clear") # Linux/Mac
+    system("cls") # Windows
   end
 
   def play_again?
@@ -134,7 +202,7 @@ class RPSGame
 
       puts 'Sorry, must be y or n'
     end
-    return false if answer.downcase == 'n'
+    return false if answer == 'n'
     return true if answer == 'y'
   end
 
@@ -145,8 +213,11 @@ class RPSGame
       loop do
         human.choose
         computer.choose
+        clear_screen
         display_moves
-        display_winner_message
+        winner = calculate_winner
+        display_winner_message(winner)
+        display_score
         break if max_score?
       end
       break unless play_again?
