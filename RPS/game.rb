@@ -191,14 +191,21 @@ class RPSGame
 
   private
 
-  attr_accessor :human, :computer
+  attr_accessor :human, :computer, :history
 
   def initialize
     @human = Human.new
     @computer = AI_ARRAY.sample.new
+    @history = History.new
+  end
+
+  def clear_screen
+    system("clear") # Linux/Mac
+    system("cls") # Windows
   end
 
   def display_welcome_message
+    clear_screen
     puts '================================'
     puts 'Welcome to Rock, Paper, Scissors'
     puts '================================'
@@ -207,6 +214,7 @@ class RPSGame
   end
 
   def display_goodbye_message
+    clear_screen
     puts 'Thanks for playing Rock, Paper, Scissors.'
   end
 
@@ -250,11 +258,6 @@ class RPSGame
     computer.score = 0
   end
 
-  def clear_screen
-    system("clear") # Linux/Mac
-    system("cls") # Windows
-  end
-
   def play_again?
     answer = nil
     loop do
@@ -278,18 +281,16 @@ class RPSGame
     display_moves
     winner = calculate_winner
     display_winner_message(winner)
+    display_score
   end
 
   public
 
   def play
-    clear_screen
     display_welcome_message
-    history = History.new
     loop do # Loop to play again until user quits
       loop do # Loop until one player reaches maximum score
         play_round
-        display_score
         history.add_record(human, computer)
         break if max_score?
       end
@@ -297,7 +298,6 @@ class RPSGame
       break unless play_again?
       reset_score
     end
-    clear_screen
     display_goodbye_message
     history.print_record(human, computer)
   end
