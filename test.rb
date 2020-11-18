@@ -1,9 +1,12 @@
-MOVE_HASH = {
-  'rock': Rock,
-  'paper': Paper,
-  'scissors': Scissors,
-  'lizard': Lizard,
-  'spock': Spock
-}
+module Test
+  def method1
+  end
 
-p MOVE_HASH.keys
+  def method2
+  end
+end
+
+class Tester
+
+  include Test
+end

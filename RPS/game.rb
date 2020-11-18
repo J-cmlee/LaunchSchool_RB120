@@ -2,16 +2,12 @@
 # Indiviual moves have been made into individual classes, which allows
 # for more customization of the rules, but requires a lot more code
 class Move
-  attr_reader :name
+  attr_reader :name, :beats
 
   def initialize; end
 
   def >(other_move)
-    win_against?(other_move)
-  end
-
-  def <(other_move)
-    (other_move.win_against?(self))
+    beats.include?(other_move.name)
   end
 
   def to_s
@@ -23,11 +19,7 @@ class Rock < Move
   def initialize
     super
     @name = 'rock'
-  end
-
-  def win_against?(other_move)
-    (other_move.name == 'scissors') ||
-      (other_move.name == 'lizard')
+    @beats = ['scissors', 'lizard']
   end
 end
 
@@ -35,11 +27,7 @@ class Paper < Move
   def initialize
     super
     @name = 'paper'
-  end
-
-  def win_against?(other_move)
-    (other_move.name == 'rock') ||
-      (other_move.name == 'spock')
+    @beats = ['rock', 'spock']
   end
 end
 
@@ -47,11 +35,7 @@ class Scissors < Move
   def initialize
     super
     @name = 'scissors'
-  end
-
-  def win_against?(other_move)
-    (other_move.name == 'paper') ||
-      (other_move.name == 'lizard')
+    @beats = ['paper', 'lizard']
   end
 end
 
@@ -59,11 +43,7 @@ class Lizard < Move
   def initialize
     super
     @name = 'lizard'
-  end
-
-  def win_against?(other_move)
-    (other_move.name == 'paper') ||
-      (other_move.name == 'spock')
+    @beats = ['paper', 'spock']
   end
 end
 
@@ -71,11 +51,7 @@ class Spock < Move
   def initialize
     super
     @name = 'spock'
-  end
-
-  def win_against?(other_move)
-    (other_move.name == 'scissors') ||
-      (other_move.name == 'rock')
+    @beats = ['scissors', 'rock']
   end
 end
 
@@ -85,7 +61,14 @@ MOVE_HASH = {
   'paper' => Paper,
   'scissors' => Scissors,
   'lizard' => Lizard,
-  'spock' => Spock
+  'spock' => Spock,
+
+  # Shortcuts
+  'r' => Rock,
+  'p' => Paper,
+  's' => Scissors,
+  'l' => Lizard,
+  'k' => Spock
 }
 
 # Player class for storing moves and scores for user
@@ -115,7 +98,7 @@ class Human < Player
   def choose
     choice = nil
     loop do
-      puts "Please choose #{MOVE_HASH.keys}:"
+      puts "Please choose [r]ock, [p]aper, [s]cissors, [l]izard or spoc[k]:"
       choice = gets.chomp.downcase
       break if MOVE_HASH.keys.include?(choice)
 
@@ -138,27 +121,22 @@ class Computer < Player
     self.move = personality.sample.new
   end
 
-  private
-
-  # Computer Personalities
-  # depending on the personality, the number of each move class is
-  # adjusted in count within the @personality array
-  def set_personality
-    case name
-    when 'R2D2'
-      set_r2d2_personality
-    when 'Hal'
-      set_hal_personality
-    when 'C3PO'
-      self.personality = [Rock]
-    end
+  def to_s
+    name
   end
+end
 
-  def set_r2d2_personality
+# Computer Personalities
+# depending on the personality, the number of each move class is
+# adjusted in count within the @personality array
+class R2D2 < Computer
+  def set_personality
     self.personality = MOVE_HASH.values
   end
+end
 
-  def set_hal_personality
+class Hal < Computer
+  def set_personality
     p_array = []
     10.times { p_array << Rock }
     21.times { p_array << Scissors }
@@ -167,13 +145,27 @@ class Computer < Player
   end
 end
 
+class C3PO < Computer
+  def set_personality
+    self.personality = [Rock]
+  end
+end
+
+# Array for storing valid computer personalities
+AI_ARRAY = [R2D2, Hal, C3PO]
+
 # History class to store each round
 class History
   SPACING = 18
+
+  private
+
   def initialize
     @record = []
     @round = 1
   end
+
+  public
 
   def add_record(player1, player2)
     @record << [@round, player1.move.name, player2.move.name,
@@ -196,11 +188,14 @@ end
 # Game Orchestration Engine
 class RPSGame
   WIN_SCORE = 10
+
+  private
+
   attr_accessor :human, :computer
 
   def initialize
     @human = Human.new
-    @computer = Computer.new
+    @computer = AI_ARRAY.sample.new
   end
 
   def display_welcome_message
@@ -224,7 +219,7 @@ class RPSGame
     if human.move > computer.move
       human.score += 1
       human
-    elsif human.move < computer.move
+    elsif computer.move > human.move
       computer.score += 1
       computer
     end
@@ -272,22 +267,33 @@ class RPSGame
     return true if answer == 'y'
   end
 
+  def display_round_end
+    puts "The round is over!"
+  end
+
+  def play_round
+    human.choose
+    computer.choose
+    clear_screen
+    display_moves
+    winner = calculate_winner
+    display_winner_message(winner)
+  end
+
+  public
+
   def play
     clear_screen
     display_welcome_message
     history = History.new
     loop do # Loop to play again until user quits
       loop do # Loop until one player reaches maximum score
-        human.choose
-        computer.choose
-        clear_screen
-        display_moves
-        winner = calculate_winner
-        display_winner_message(winner)
-        history.add_record(human, computer)
+        play_round
         display_score
+        history.add_record(human, computer)
         break if max_score?
       end
+      display_round_end
       break unless play_again?
       reset_score
     end
