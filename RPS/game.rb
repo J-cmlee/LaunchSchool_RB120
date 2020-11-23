@@ -4,8 +4,6 @@
 class Move
   attr_reader :name, :beats
 
-  def initialize; end
-
   def >(other_move)
     beats.include?(other_move.name)
   end
@@ -17,7 +15,6 @@ end
 
 class Rock < Move
   def initialize
-    super
     @name = 'rock'
     @beats = ['scissors', 'lizard']
   end
@@ -25,7 +22,6 @@ end
 
 class Paper < Move
   def initialize
-    super
     @name = 'paper'
     @beats = ['rock', 'spock']
   end
@@ -33,7 +29,6 @@ end
 
 class Scissors < Move
   def initialize
-    super
     @name = 'scissors'
     @beats = ['paper', 'lizard']
   end
@@ -41,7 +36,6 @@ end
 
 class Lizard < Move
   def initialize
-    super
     @name = 'lizard'
     @beats = ['paper', 'spock']
   end
@@ -49,7 +43,6 @@ end
 
 class Spock < Move
   def initialize
-    super
     @name = 'spock'
     @beats = ['scissors', 'rock']
   end
