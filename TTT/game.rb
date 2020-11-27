@@ -87,44 +87,105 @@ end
 
 class Player
   attr_reader :marker
+  attr_accessor :name
 
-  def initialize(marker)
+  def initialize(marker, name)
     @marker = marker
+    @name = name
+  end
+end
+
+class Score
+  WIN_SCORE = 5
+
+  attr_accessor :human, :computer
+
+  def initialize
+    @human = 0
+    @computer = 0
+  end
+
+  def to_s
+    "Human: #{@human} Computer: #{@computer}"
+  end
+
+  def reset
+    self.human = 0
+    self.computer = 0
+  end
+
+  def game_won?
+    return "Player" if @human == WIN_SCORE
+    return "Computer" if @computer == WIN_SCORE
   end
 end
 
 class TTTGame
-  HUMAN_MARKER = "X"
-  COMPUTER_MARKER = "O"
-  FIRST_TO_MOVE = HUMAN_MARKER
+  COMPUTER_MARKER = "&"
 
-  attr_reader :board, :human, :computer
+  attr_reader :board, :human, :computer, :score
 
   def initialize
     @board = Board.new
-    @human = Player.new(HUMAN_MARKER)
-    @computer = Player.new(COMPUTER_MARKER)
-    @current_marker = FIRST_TO_MOVE
+    @score = Score.new
   end
 
   def play
     clear
     display_welcome_message
+    settings
+    clear
     main_game
     display_goodbye_message
   end
 
   private
 
+  def settings
+    human_name = get_name("Player")
+    human_marker = set_marker
+    @human = Player.new(human_marker, human_name)
+    @current_marker = human.marker
+
+    computer_name = get_name("Computer")
+    @computer = Player.new(COMPUTER_MARKER, computer_name)
+  end
+
+  def get_name(player_type)
+    name = nil
+    loop do
+      puts "Please enter #{player_type} name: "
+      name = gets.chomp
+      break unless name.empty?
+      puts "Please enter in a valid name."
+    end
+    name
+  end
+
+  def set_marker
+    marker = nil
+    loop do
+      puts "Please enter a marker for the player (A-Z, 0-9): "
+      marker = gets.chomp
+      break if marker.length == 1 && marker =~ /[a-zA-Z0-9]/
+      puts "Please enter a valid marker"
+    end
+    marker.upcase
+  end
+
   def main_game
     loop do
-      display_board
-      player_move
-      display_result
+      play_round
       break unless play_again?
       reset
       display_play_again_message
     end
+  end
+
+  def play_round
+    display_board
+    player_move
+    display_result
   end
 
   def player_move
@@ -150,11 +211,11 @@ class TTTGame
   end
 
   def human_turn?
-    @current_marker == HUMAN_MARKER
+    @current_marker == human.marker
   end
 
   def display_board
-    puts "You're a #{human.marker}. Computer is a #{computer.marker}."
+    puts "#{human.name}: #{human.marker} | #{computer.name}: #{computer.marker}"
     puts ""
     board.draw
     puts ""
@@ -163,7 +224,7 @@ class TTTGame
   def joinor(array)
     values = array.clone.map(&:to_s)
     last_value = values.pop
-  
+
     return last_value if values.empty?
     values[-1] += " or #{last_value}"
     values.join(", ")
@@ -191,7 +252,7 @@ class TTTGame
       @current_marker = COMPUTER_MARKER
     else
       computer_moves
-      @current_marker = HUMAN_MARKER
+      @current_marker = human.marker
     end
   end
 
@@ -221,13 +282,13 @@ class TTTGame
   end
 
   def clear
-    system ("clear")
-    system ("cls")
+    system("clear")
+    system("cls")
   end
 
   def reset
     board.reset
-    @current_marker = FIRST_TO_MOVE
+    @current_marker = human.marker
     clear
   end
 

@@ -1,10 +1,30 @@
-def joinor(array)
-  values = array.clone
-  last_value = values.pop
+class Score
+  WIN_SCORE = 5
 
-  return last_value if values.empty?
-  values[-1] += " or #{last_value}"
-  values.join(", ")
+  attr_accessor :human, :computer
+
+  def initialize
+    @human = 0
+    @computer = 0
+  end
+
+  def to_s
+    "Human: #{@human} Computer: #{@computer}"
+  end
+
+  def reset
+    self.human = 0
+    self.computer = 0
+  end
+
+  def game_won?
+    return "human" if @human == WIN_SCORE
+    return "computer" if @computer == WIN_SCORE
+  end
+
 end
 
-p joinor(['a','b','c'])
+score = Score.new
+score.human += 1
+puts score
+p score.game_won?
