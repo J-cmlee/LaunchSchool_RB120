@@ -1,7 +1,10 @@
+def joinor(array)
+  values = array.clone
+  last_value = values.pop
 
-def marked?
-  true
+  return last_value if values.empty?
+  values[-1] += " or #{last_value}"
+  values.join(", ")
 end
 
-markers = ["X","X","O"]
-p markers.collect(&:to_sym)
+p joinor(['a','b','c'])
