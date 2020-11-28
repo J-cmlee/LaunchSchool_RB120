@@ -132,7 +132,7 @@ class Computer < Player
 end
 
 class Score
-  WIN_SCORE = 1
+  WIN_SCORE = 5
 
   attr_accessor :human, :computer
 
