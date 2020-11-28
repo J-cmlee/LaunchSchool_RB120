@@ -1,3 +1,5 @@
+require 'pry'
+
 class Board
   WINNING_LINES = [[1, 2, 3], [4, 5, 6], [7, 8, 9]] + # rows
                   [[1, 4, 7], [2, 5, 8], [3, 6, 9]] + # cols
@@ -6,6 +8,10 @@ class Board
   def initialize
     @squares = {}
     reset
+  end
+
+  def [](num)
+    @squares[num].marker
   end
 
   def []=(num, marker)
@@ -27,10 +33,22 @@ class Board
   def winning_marker
     WINNING_LINES.each do |line|
       squares = @squares.values_at(*line)
-      if three_identical_markers?(squares)
+      if identical_markers?(squares, 3)
         return squares.first.marker
       end
     end
+    nil
+  end
+
+  def almost_won_lines
+    lines = []
+    WINNING_LINES.each do |line|
+      squares = @squares.values_at(*line)
+      if identical_markers?(squares, 2)
+        lines << line unless line.select { |i| @squares[i].marker == ' ' }.empty?
+      end
+    end
+    return lines unless lines.empty?
     nil
   end
 
@@ -38,7 +56,7 @@ class Board
     (1..9).each { |key| @squares[key] = Square.new }
   end
 
-  # rubocop:disable Metrics/AbcSize
+  # rubocop:disable Metrics/MethodLength, Metrics/AbcSize
   def draw
     puts "     |     |"
     puts "  #{@squares[1]}  |  #{@squares[2]}  |  #{@squares[3]}"
@@ -52,13 +70,13 @@ class Board
     puts "  #{@squares[7]}  |  #{@squares[8]}  |  #{@squares[9]}"
     puts "     |     |"
   end
-  # rubocop:enable Metrics/AbcSize
+  # rubocop:enable Metrics/MethodLength, Metrics/AbcSize
 
   private
 
-  def three_identical_markers?(squares)
+  def identical_markers?(squares, count)
     markers = squares.select(&:marked?).collect(&:marker)
-    return false if markers.size != 3
+    return false if markers.size != count
     markers.min == markers.max
   end
 end
@@ -95,18 +113,32 @@ class Player
   end
 end
 
+# inherits player values + includes offsense/defense
+class Computer < Player
+  # Will first store all the lines that have almost won
+  # 1. Will try and win
+  # 2. Will try and defend if not possible
+  # 3. Will pick a random available square
+  def move_set(board)
+    danger_lines = board.almost_won_lines
+    return board.unmarked_keys.sample if danger_lines.nil?
+    danger_lines.each do |line|
+      if line.map { |index| board[index] }.include?(marker)
+        return line.select { |index| board[index] == ' ' }.first
+      end
+    end
+    danger_lines.first.select { |index| board[index] == ' ' }.first
+  end
+end
+
 class Score
-  WIN_SCORE = 5
+  WIN_SCORE = 1
 
   attr_accessor :human, :computer
 
   def initialize
     @human = 0
     @computer = 0
-  end
-
-  def to_s
-    "Human: #{@human} Computer: #{@computer}"
   end
 
   def reset
@@ -142,16 +174,16 @@ class TTTGame
   private
 
   def settings
-    human_name = get_name("Player")
+    human_name = enter_name("Player")
     human_marker = set_marker
     @human = Player.new(human_marker, human_name)
     @current_marker = human.marker
 
-    computer_name = get_name("Computer")
-    @computer = Player.new(COMPUTER_MARKER, computer_name)
+    computer_name = enter_name("Computer")
+    @computer = Computer.new(COMPUTER_MARKER, computer_name)
   end
 
-  def get_name(player_type)
+  def enter_name(player_type)
     name = nil
     loop do
       puts "Please enter #{player_type} name: "
@@ -177,15 +209,34 @@ class TTTGame
     loop do
       play_round
       break unless play_again?
-      reset
       display_play_again_message
+      score.reset
     end
   end
 
   def play_round
-    display_board
-    player_move
-    display_result
+    loop do
+      display_board
+      player_move
+      update_score
+      display_result
+      reset
+      break if score.game_won?
+    end
+    display_final_score
+  end
+
+  def display_final_score
+    puts "Final score:"
+    puts "#{human.name}: #{score.human}"
+    puts "#{computer.name}: #{score.computer}"
+  end
+
+  def update_score
+    case board.winning_marker
+    when human.marker then score.human += 1
+    when COMPUTER_MARKER then score.computer += 1
+    end
   end
 
   def player_move
@@ -198,6 +249,7 @@ class TTTGame
 
   def display_welcome_message
     puts "Welcome to Tic Tac Toe!"
+    puts "First to #{Score::WIN_SCORE} wins!"
     puts ""
   end
 
@@ -215,7 +267,8 @@ class TTTGame
   end
 
   def display_board
-    puts "#{human.name}: #{human.marker} | #{computer.name}: #{computer.marker}"
+    puts "#{human.name} (#{human.marker}): Score #{score.human}"
+    puts "#{computer.name} (#{computer.marker}): Score #{score.computer}"
     puts ""
     board.draw
     puts ""
@@ -243,7 +296,7 @@ class TTTGame
   end
 
   def computer_moves
-    board[board.unmarked_keys.sample] = computer.marker
+    board[computer.move_set(board)] = computer.marker
   end
 
   def current_player_moves
@@ -256,9 +309,9 @@ class TTTGame
     end
   end
 
+  # rubocop:disable Metrics/MethodLength
   def display_result
     clear_screen_and_display_board
-
     case board.winning_marker
     when human.marker
       puts "You won!"
@@ -267,7 +320,10 @@ class TTTGame
     else
       puts "It's a tie!"
     end
+    puts "Press any key to continue "
+    gets.chomp
   end
+  # rubocop:enable Metrics/MethodLength
 
   def play_again?
     answer = nil
