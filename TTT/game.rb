@@ -186,8 +186,6 @@ class Score
 end
 
 class TTTGame
-  
-
   attr_reader :board, :human, :computer, :score
 
   def initialize
