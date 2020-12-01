@@ -105,8 +105,18 @@ class Player
   attr_reader :marker
   attr_accessor :name
 
-  def initialize(marker, name)
-    @marker = marker
+  def initialize
+    enter_name
+  end
+
+  def enter_name
+    name = nil
+    loop do
+      puts "Please enter #{self.class} name: "
+      name = gets.chomp
+      break if !name.empty? && name =~ /[A-Za-z]/
+      puts "Please enter in a valid name."
+    end
     @name = name
   end
 end
@@ -117,6 +127,13 @@ class Computer < Player
   # 1. Will try and win
   # 2. Will try and defend if not possible
   # 3. Will pick a random available square
+  COMPUTER_MARKER = "&"
+
+  def initialize
+    @marker = COMPUTER_MARKER
+    super
+  end
+
   def move_set(board)
     danger_lines = board.almost_won_lines
     return board.unmarked_keys.sample if danger_lines.nil?
@@ -129,8 +146,26 @@ class Computer < Player
   end
 end
 
+class Human < Player
+  def initialize
+    super
+    set_marker
+  end
+
+  def set_marker
+    marker = nil
+    loop do
+      puts "Please enter a marker for the player (A-Z, 0-9): "
+      marker = gets.chomp
+      break if marker.length == 1 && marker =~ /[a-zA-Z0-9]/
+      puts "Please enter a valid marker"
+    end
+    @marker = marker.upcase
+  end
+end
+
 class Score
-  WIN_SCORE = 5
+  WIN_SCORE = 1
 
   attr_accessor :human, :computer
 
@@ -144,14 +179,14 @@ class Score
     self.computer = 0
   end
 
-  def game_won?
+  def game_won_by
     return "Player" if @human == WIN_SCORE
     return "Computer" if @computer == WIN_SCORE
   end
 end
 
 class TTTGame
-  COMPUTER_MARKER = "&"
+  
 
   attr_reader :board, :human, :computer, :score
 
@@ -172,35 +207,9 @@ class TTTGame
   private
 
   def settings
-    human_name = enter_name("Player")
-    human_marker = set_marker
-    @human = Player.new(human_marker, human_name)
+    @human = Human.new
     @current_marker = human.marker
-
-    computer_name = enter_name("Computer")
-    @computer = Computer.new(COMPUTER_MARKER, computer_name)
-  end
-
-  def enter_name(player_type)
-    name = nil
-    loop do
-      puts "Please enter #{player_type} name: "
-      name = gets.chomp
-      break unless name.empty?
-      puts "Please enter in a valid name."
-    end
-    name
-  end
-
-  def set_marker
-    marker = nil
-    loop do
-      puts "Please enter a marker for the player (A-Z, 0-9): "
-      marker = gets.chomp
-      break if marker.length == 1 && marker =~ /[a-zA-Z0-9]/
-      puts "Please enter a valid marker"
-    end
-    marker.upcase
+    @computer = Computer.new
   end
 
   def main_game
@@ -219,7 +228,7 @@ class TTTGame
       update_score
       display_result
       reset
-      break if score.game_won?
+      break if score.game_won_by
     end
     display_final_score
   end
@@ -233,7 +242,7 @@ class TTTGame
   def update_score
     case board.winning_marker
     when human.marker then score.human += 1
-    when COMPUTER_MARKER then score.computer += 1
+    when computer.marker then score.computer += 1
     end
   end
 
@@ -281,16 +290,20 @@ class TTTGame
     values.join(", ")
   end
 
+  def number?(obj)
+    obj.to_s == obj.to_i.to_s
+  end
+
   def human_moves
     puts "Choose a square (#{joinor(board.unmarked_keys)}): "
     square = nil
     loop do
-      square = gets.chomp.to_i
-      break if board.unmarked_keys.include?(square)
+      square = gets.chomp
+      break if number?(square) && board.unmarked_keys.include?(square.to_i)
       puts "Sorry, that's not a valid choice."
     end
 
-    board[square] = human.marker
+    board[square.to_i] = human.marker
   end
 
   def computer_moves
@@ -300,14 +313,13 @@ class TTTGame
   def current_player_moves
     if human_turn?
       human_moves
-      @current_marker = COMPUTER_MARKER
+      @current_marker = computer.marker
     else
       computer_moves
       @current_marker = human.marker
     end
   end
 
-  # rubocop:disable Metrics/MethodLength
   def display_result
     clear_screen_and_display_board
     case board.winning_marker
@@ -318,10 +330,8 @@ class TTTGame
     else
       puts "It's a tie!"
     end
-    puts "Press any key to continue "
     gets.chomp
   end
-  # rubocop:enable Metrics/MethodLength
 
   def play_again?
     answer = nil
@@ -347,6 +357,7 @@ class TTTGame
   end
 
   def display_play_again_message
+    clear
     puts "Let's play again!"
     puts ""
   end

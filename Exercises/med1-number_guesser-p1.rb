@@ -21,6 +21,10 @@ class GuessingGame
     end
   end
 
+  def reset
+
+  end
+
   private
 
   attr_reader :secret
