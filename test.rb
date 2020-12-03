@@ -1,97 +1,88 @@
-# frozen_string_literal: true
-
-class GuessingGame
-  attr_accessor :guesses
-
-  def initialize
-    @guesses = 7
-    @secret = (1..100).to_a.sample
-  end
-
-  def play
-    7.times do
-      break if user_guess == true
-    end
-    if guesses == 0
-      puts 'You have no more guesses.  You lost!'
-    else
-      puts "That's the number!"
-      puts ''
-      puts 'You won!'
-    end
-  end
-
-  private
-
-  attr_reader :secret
-
-  def user_guess
-    puts "You have #{guesses} remaining."
-    puts 'Enter a number between 1 and 100: '
-    guess = gets.chomp.to_i
-    return true if guess == secret
-
-    puts 'Your guess is too low.' if guess < secret
-    puts 'Your guess is too high.' if guess > secret
-    puts ''
-    self.guesses -= 1
+class Customer
+  attr_accessor :order
+  def place_order
+    @order = Order.new
   end
 end
 
-game = GuessingGame.new
-game.play
+class Order
+  # attr_accessor :burger, :side, :drink
+  def initialize
+    @burger = Burger.new
+    @side = Side.new
+    @drink = Drink.new
+    puts to_s
+    puts total
+  end
+  
+  def meal
+    [@burger, @side, @drink]
+  end
 
-# You have 7 guesses remaining.
-# Enter a number between 1 and 100: 104
-# Invalid guess. Enter a number between 1 and 100: 50
-# Your guess is too low.
+  def to_s
+    meal.map(&:to_s).join(', ')
+  end
 
-# You have 6 guesses remaining.
-# Enter a number between 1 and 100: 75
-# Your guess is too low.
+  def total
+    total_cost = @burger.cost + @side.cost + @drink.cost
+    format("$%.2f", total_cost) # #format formats the cost to two decimal places
+  end
 
-# You have 5 guesses remaining.
-# Enter a number between 1 and 100: 85
-# Your guess is too high.
+  # def +(other)
+  #   self.cost + other.cost
+  # end
+end
 
-# You have 4 guesses remaining.
-# Enter a number between 1 and 100: 0
-# Invalid guess. Enter a number between 1 and 100: 80
+class MealItem
+  def initialize
+    @option = choose_option
+  end
+  
+  def choose_option
+    puts "Please choose a #{self.class} option:"
+    puts item_options # item_options returns a list of options and prices
+                      # for a particular item type
+    gets.chomp
+  end
 
-# You have 3 guesses remaining.
-# Enter a number between 1 and 100: 81
-# That's the number!
+  def item_options
+    self.class::OPTIONS
+  end
 
-# You won!
+  def to_s
+    self.class::OPTIONS[@option][:name]
+  end
 
-# game.play
+  def cost
+    self.class::OPTIONS[@option][:cost]
+  end
+end
 
-# You have 7 guesses remaining.
-# Enter a number between 1 and 100: 50
-# Your guess is too high.
+class Burger < MealItem
+  OPTIONS = {
+    '1' => { name: 'LS Burger', cost: 3.00 },
+    '2' => { name: 'LS Cheeseburger', cost: 3.50 },
+    '3' => { name: 'LS Chicken Burger', cost: 4.50 },
+    '4' => { name: 'LS Double Deluxe Burger', cost: 6.00 }
+  }
+end
 
-# You have 6 guesses remaining.
-# Enter a number between 1 and 100: 25
-# Your guess is too low.
+class Side < MealItem
+  OPTIONS = {
+    '1' => { name: 'Fries', cost: 0.99 },
+    '2' => { name: 'Onion Rings', cost: 1.50 }
+  }
+end
 
-# You have 5 guesses remaining.
-# Enter a number between 1 and 100: 37
-# Your guess is too high.
+class Drink < MealItem
+  OPTIONS = {
+    '1' => { name: 'Cola', cost: 1.50 },
+    '2' => { name: 'Lemonade', cost: 1.50 },
+    '3' => { name: 'Vanilla Shake', cost: 2.00 },
+    '4' => { name: 'Chocolate Shake', cost: 2.00 },
+    '5' => { name: 'Strawberry Shake', cost: 2.00 }
+  }
+end
 
-# You have 4 guesses remaining.
-# Enter a number between 1 and 100: 31
-# Your guess is too low.
-
-# You have 3 guesses remaining.
-# Enter a number between 1 and 100: 34
-# Your guess is too high.
-
-# You have 2 guesses remaining.
-# Enter a number between 1 and 100: 32
-# Your guess is too low.
-
-# You have 1 guesses remaining.
-# Enter a number between 1 and 100: 32
-# Your guess is too low.
-
-# You have no more guesses. You lost!
+jojo = Customer.new
+jojo.place_order
